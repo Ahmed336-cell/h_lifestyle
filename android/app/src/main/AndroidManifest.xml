@@ -2,7 +2,7 @@
     <application
         android:label="h_lifestyle"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/h_lifstyle">
         <activity
             android:name=".MainActivity"
             android:exported="true"

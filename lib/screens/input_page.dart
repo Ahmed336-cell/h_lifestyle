@@ -36,62 +36,6 @@ enum WeightLossPlan {
 }
 
 class _InputPageState extends State<InputPage> {
-
-  Future<void> getIngredients() async {
-    final apiUrl = 'https://123a-196-153-153-39.ngrok-free.app/';
-
-    // Prepare the data to send
-    Map<String, dynamic> data = {
-      "nutrition_input": [age.toDouble(), weight.toDouble(), height.toDouble(),mealsPerDay],
-      "params": {
-        "n_neighbors": 5,
-        "return_distance": false,
-      },
-    };
-
-    // Send HTTP POST request
-    final response = await http.post(
-      Uri.parse(apiUrl),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      body: jsonEncode(data),
-    );
-
-    if (response.statusCode == 200) {
-      // Parse the response JSON and handle the result
-      final result = jsonDecode(response.body);
-      handleResult(result);
-    } else {
-      // Handle the error
-      print('Error ${response.statusCode}: ${response.reasonPhrase}');
-    }
-  }
-
-  void handleResult(dynamic result) {
-    // Process the result received from the FastAPI endpoint
-    if (result != null && result['output'] != null) {
-      List<Recipe> recipes = [];
-      for (var recipeData in result['output']) {
-        Recipe recipe = Recipe(
-          // Extract relevant information from recipeData
-          Name: recipeData['Name'],
-          CookTime: recipeData['CookTime'],
-          PrepTime: recipeData['PrepTime'],
-          TotalTime: recipeData['TotalTime'],
-          RecipeIngredientParts: List<String>.from(recipeData['RecipeIngredientParts']),
-          Calories: recipeData['Calories'],
-        );
-        recipes.add(recipe);
-      }
-
-      // Use the recipes list as needed
-      print(recipes);
-    } else {
-      // Handle the case where the result is null or doesn't contain 'output'
-      print('Invalid response format');
-    }
-  }
-
-
   Gender? genderSelected;
   int height = 180;
   int weight = 60;
@@ -99,6 +43,8 @@ class _InputPageState extends State<InputPage> {
   ActivityLevel? activityLevel;
   WeightLossPlan? weightLossPlan;
   int mealsPerDay = 3; // Default value
+
+
 
 
 
@@ -349,19 +295,19 @@ class _InputPageState extends State<InputPage> {
               BottomButton(
                 label: "CALCULATE",
                 onPressd: () {
-                  // CalculatorBrain calc =
-                  // CalculatorBrain(height: height, weight: weight);
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) => ResultPage(
-                  //       bmiResult: calc.calculateBMI(),
-                  //       resultText: calc.getResult(),
-                  //       inter: calc.getInterpretaion(),
-                  //     ),
-                  //   ),
-                  getIngredients();
-                },
+                  CalculatorBrain calc =
+                  CalculatorBrain(height: height, weight: weight);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ResultPage(
+                        bmiResult: calc.calculateBMI(),
+                        resultText: calc.getResult(),
+                        inter: calc.getInterpretaion(),
+                      ),
+                    ),
+                  );
+                  },
               ),
             ],
           ),
