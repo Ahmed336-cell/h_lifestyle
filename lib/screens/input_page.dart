@@ -38,12 +38,11 @@ enum WeightLossPlan {
 class _InputPageState extends State<InputPage> {
 
   Future<void> getIngredients() async {
-    final apiUrl = 'http://10.0.2.2:8080/predict/';
+    final apiUrl = 'https://123a-196-153-153-39.ngrok-free.app/';
 
     // Prepare the data to send
     Map<String, dynamic> data = {
-      "nutrition_input": [age.toDouble(), weight.toDouble(), height.toDouble()],
-      "ingredients": ["ingredient1", "ingredient2", "ingredient3"], // replace with your list of ingredients
+      "nutrition_input": [age.toDouble(), weight.toDouble(), height.toDouble(),mealsPerDay],
       "params": {
         "n_neighbors": 5,
         "return_distance": false,
@@ -53,7 +52,7 @@ class _InputPageState extends State<InputPage> {
     // Send HTTP POST request
     final response = await http.post(
       Uri.parse(apiUrl),
-      headers: {'Content-Type': 'application/json'},
+        headers: {'ngrok-skip-browser-warning': 'true'},
       body: jsonEncode(data),
     );
 
