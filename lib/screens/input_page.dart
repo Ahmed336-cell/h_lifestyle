@@ -1,45 +1,131 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../components/icon_content.dart';
 import 'package:h_lifestyle/components/reusable_card.dart';
 import '../constants.dart';
+import '../recipe.dart';
 import 'result_page.dart';
 import '../components/bottom_button.dart';
 import '../components/round_button.dart';
 import 'package:h_lifestyle/calculator_brain.dart';
+import 'package:http/http.dart' as http;
 class InputPage extends StatefulWidget {
   @override
   _InputPageState createState() => _InputPageState();
 }
-enum Gender{
+
+enum Gender {
   male,
   female,
 }
+enum ActivityLevel {
+  littleNoExercise,
+  lightExercise,
+  moderateExercise,
+  veryActive,
+  extraActive,
+}
+
+enum WeightLossPlan {
+  maintainWeight,
+  mildWeightLoss,
+  weightLoss,
+  extremeWeightLoss,
+}
 
 class _InputPageState extends State<InputPage> {
-  Gender ?genderSelected;
+
+  Future<void> getIngredients() async {
+    final apiUrl = 'http://10.0.2.2:8080/predict/';
+
+    // Prepare the data to send
+    Map<String, dynamic> data = {
+      "nutrition_input": [age.toDouble(), weight.toDouble(), height.toDouble()],
+      "ingredients": ["ingredient1", "ingredient2", "ingredient3"], // replace with your list of ingredients
+      "params": {
+        "n_neighbors": 5,
+        "return_distance": false,
+      },
+    };
+
+    // Send HTTP POST request
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the response JSON and handle the result
+      final result = jsonDecode(response.body);
+      handleResult(result);
+    } else {
+      // Handle the error
+      print('Error ${response.statusCode}: ${response.reasonPhrase}');
+    }
+  }
+
+  void handleResult(dynamic result) {
+    // Process the result received from the FastAPI endpoint
+    if (result != null && result['output'] != null) {
+      List<Recipe> recipes = [];
+      for (var recipeData in result['output']) {
+        Recipe recipe = Recipe(
+          // Extract relevant information from recipeData
+          Name: recipeData['Name'],
+          CookTime: recipeData['CookTime'],
+          PrepTime: recipeData['PrepTime'],
+          TotalTime: recipeData['TotalTime'],
+          RecipeIngredientParts: List<String>.from(recipeData['RecipeIngredientParts']),
+          Calories: recipeData['Calories'],
+        );
+        recipes.add(recipe);
+      }
+
+      // Use the recipes list as needed
+      print(recipes);
+    } else {
+      // Handle the case where the result is null or doesn't contain 'output'
+      print('Invalid response format');
+    }
+  }
+
+
+  Gender? genderSelected;
   int height = 180;
   int weight = 60;
   int age = 20;
+  ActivityLevel? activityLevel;
+  WeightLossPlan? weightLossPlan;
+  int mealsPerDay = 3; // Default value
+
+
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Center(child: Text('BMI CALCULATOR')),
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Row(
+      appBar: AppBar(
+        title: Center(child: Text('BMI CALCULATOR')),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
                     child: ReusableCard(
-                      c:genderSelected == Gender.male? activeCardColor:inActiveCardColor,
-                      cardChilde: ReusableColumn(FontAwesomeIcons.mars , "MALE"),
-                      onPress: (){
+                      c: genderSelected == Gender.male
+                          ? activeCardColor
+                          : inActiveCardColor,
+                      cardChilde: ReusableColumn(
+                          FontAwesomeIcons.mars, "MALE"),
+                      onPress: () {
                         setState(() {
                           genderSelected = Gender.male;
                         });
@@ -48,26 +134,29 @@ class _InputPageState extends State<InputPage> {
                   ),
                   Expanded(
                     child: ReusableCard(
-                      c:genderSelected==Gender.female?activeCardColor:inActiveCardColor,
-                      cardChilde: ReusableColumn(FontAwesomeIcons.venus,"FEMALE"),
-                      onPress: (){
+                      c: genderSelected == Gender.female
+                          ? activeCardColor
+                          : inActiveCardColor,
+                      cardChilde: ReusableColumn(
+                          FontAwesomeIcons.venus, "FEMALE"),
+                      onPress: () {
                         setState(() {
-                          genderSelected= Gender.female;
+                          genderSelected = Gender.female;
                         });
                       },
-
                     ),
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: ReusableCard(c:activeCardColor,
+              ReusableCard(
+                c: activeCardColor,
                 cardChilde: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("HEIGHT",
-                      style: labelTextStyle,),
+                    Text(
+                      "HEIGHT",
+                      style: labelTextStyle,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -77,54 +166,53 @@ class _InputPageState extends State<InputPage> {
                           height.toString(),
                           style: numberTextStyle,
                         ),
-                        Text("cm",style: labelTextStyle,)
+                        Text("cm", style: labelTextStyle)
                       ],
                     ),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 15),
-                        overlayShape: RoundSliderOverlayShape(overlayRadius: 25),
+                        thumbShape: RoundSliderThumbShape(
+                            enabledThumbRadius: 15),
+                        overlayShape: RoundSliderOverlayShape(
+                            overlayRadius: 25),
                         activeTrackColor: Colors.white,
-
                       ),
                       child: Slider(
                         value: height.toDouble(),
                         min: 120,
                         max: 220,
-                        thumbColor:Color(0xFFEB1555) ,
+                        thumbColor: Color(0xFFEB1555),
                         activeColor: Colors.white,
                         inactiveColor: Color(0xFF8D8E98),
-                        overlayColor: MaterialStateProperty.all<Color>(Color(0x29EB1555)),
-                        //label: height.toString(),
-                        onChanged: (double newValue){
+                        overlayColor:
+                        MaterialStateProperty.all<Color>(
+                            Color(0x29EB1555)),
+                        onChanged: (double newValue) {
                           setState(() {
                             height = newValue.round();
-
                           });
                         },
                       ),
                     )
                   ],
-
                 ),
-
               ),
-            ),
-            Expanded(
-              child: Row(
+              Row(
                 children: [
                   Expanded(
-                    child: ReusableCard(c:activeCardColor,
+                    child: ReusableCard(
+                      c: activeCardColor,
                       cardChilde: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("WEIGHT", style: labelTextStyle,),
-                          Text("$weight",style: numberTextStyle,),
+                          Text("WEIGHT", style: labelTextStyle),
+                          Text("$weight", style: numberTextStyle),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              RoundIconButton(icon: FontAwesomeIcons.minus,
-                                  onPress:() {
+                              RoundIconButton(
+                                  icon: FontAwesomeIcons.minus,
+                                  onPress: () {
                                     setState(() {
                                       weight--;
                                     });
@@ -132,8 +220,9 @@ class _InputPageState extends State<InputPage> {
                               SizedBox(
                                 width: 10,
                               ),
-                              RoundIconButton(icon: FontAwesomeIcons.plus,
-                                  onPress: (){
+                              RoundIconButton(
+                                  icon: FontAwesomeIcons.plus,
+                                  onPress: () {
                                     setState(() {
                                       weight++;
                                     });
@@ -145,17 +234,19 @@ class _InputPageState extends State<InputPage> {
                     ),
                   ),
                   Expanded(
-                    child: ReusableCard(c:activeCardColor,
+                    child: ReusableCard(
+                      c: activeCardColor,
                       cardChilde: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("AGE", style: labelTextStyle,),
-                          Text("$age",style: numberTextStyle,),
+                          Text("AGE", style: labelTextStyle),
+                          Text("$age", style: numberTextStyle),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              RoundIconButton(icon: FontAwesomeIcons.minus,
-                                  onPress:() {
+                              RoundIconButton(
+                                  icon: FontAwesomeIcons.minus,
+                                  onPress: () {
                                     setState(() {
                                       age--;
                                     });
@@ -163,8 +254,9 @@ class _InputPageState extends State<InputPage> {
                               SizedBox(
                                 width: 10,
                               ),
-                              RoundIconButton(icon: FontAwesomeIcons.plus,
-                                  onPress: (){
+                              RoundIconButton(
+                                  icon: FontAwesomeIcons.plus,
+                                  onPress: () {
                                     setState(() {
                                       age++;
                                     });
@@ -177,21 +269,105 @@ class _InputPageState extends State<InputPage> {
                   ),
                 ],
               ),
-            ),
-            BottomButton(label: "CALCULATE",
-              onPressd:(){
-                CalculatorBrain calc  = CalculatorBrain(height: height, weight: weight);
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>  ResultPage(
-                  bmiResult: calc.calculateBMI(),
-                  resultText: calc.getResult(),
-                  inter: calc.getInterpretaion(),
-                )));
-
-              }, )
-
-          ],
-        ));
+              ReusableCard(
+                c: activeCardColor,
+                cardChilde: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("ACTIVITY LEVEL", style: labelTextStyle),
+                    Column(
+                      children: ActivityLevel.values.map((level) {
+                        return Container(
+                          height: 50,
+                          child: RadioListTile<ActivityLevel>(
+                            title: Text(level.toString().split('.').last),
+                            value: level,
+                            groupValue: activityLevel,
+                            onChanged: (value) {
+                              setState(() {
+                                activityLevel = value;
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              ReusableCard(
+                c: activeCardColor,
+                cardChilde: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("WEIGHT LOSS PLAN", style: labelTextStyle),
+                    Column(
+                      children: WeightLossPlan.values.map((plan) {
+                        return Container(
+                          height: 50,
+                          child: RadioListTile<WeightLossPlan>(
+                            title: Text(plan.toString().split('.').last),
+                            value: plan,
+                            groupValue: weightLossPlan,
+                            onChanged: (value) {
+                              setState(() {
+                                weightLossPlan = value;
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),                  ],
+                ),
+              ),
+              ReusableCard(
+                c: activeCardColor,
+                cardChilde: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("MEALS PER DAY", style: labelTextStyle),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [3, 4, 5].map((meals) {
+                        return Row(
+                          children: [
+                            Radio<int>(
+                              value: meals,
+                              groupValue: mealsPerDay,
+                              onChanged: (value) {
+                                setState(() {
+                                  mealsPerDay = value!;
+                                });
+                              },
+                            ),
+                            Text("$meals"),
+                          ],
+                        );
+                      }).toList(),
+                    ),                  ],
+                ),
+              ),
+              BottomButton(
+                label: "CALCULATE",
+                onPressd: () {
+                  // CalculatorBrain calc =
+                  // CalculatorBrain(height: height, weight: weight);
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (context) => ResultPage(
+                  //       bmiResult: calc.calculateBMI(),
+                  //       resultText: calc.getResult(),
+                  //       inter: calc.getInterpretaion(),
+                  //     ),
+                  //   ),
+                  getIngredients();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
-
-
